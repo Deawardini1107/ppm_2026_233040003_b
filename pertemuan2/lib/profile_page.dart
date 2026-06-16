@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'tugas_pertemuan.dart';
 import 'quiz_pertemuan3.dart';
@@ -11,10 +12,25 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String? _currentImg;
+  Map<String, String> _profileData = {
+    'nama': 'Dea Wardini',
+    'tentang': 'Belajar Flutter!',
+    'pendidikan': 'Informatika - Universitas Pasundan',
+    'lokasi': 'Kota Bandung',
+    'img': '',
+  };
+
+  Map<String, String> _pengalamanData = {
+    'judul': 'Project Web Laravel - Acarra',
+    'deskripsi': 'Mengelola backend dan database sistem manajemen event.',
+    'img': '',
+  };
 
   @override
   Widget build(BuildContext context) {
+    bool hasProfileImg = _profileData['img']!.isNotEmpty;
+    bool hasPengalamanImg = _pengalamanData['img']!.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil Saya'),
@@ -24,12 +40,12 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ListView(
           children: [
             UserAccountsDrawerHeader(
-              accountName: const Text('Dea Wardini'),
+              accountName: Text(_profileData['nama']!),
               accountEmail: const Text('deawardini81@gmail.com'),
               currentAccountPicture: CircleAvatar(
                 backgroundColor: Colors.white,
-                backgroundImage: _currentImg != null ? NetworkImage(_currentImg!) : null,
-                child: _currentImg == null ? const Icon(Icons.person, color: Colors.blue) : null,
+                backgroundImage: hasProfileImg ? FileImage(File(_profileData['img']!)) : null,
+                child: !hasProfileImg ? const Icon(Icons.person, color: Colors.blue) : null,
               ),
             ),
             ListTile(
@@ -40,9 +56,17 @@ class _ProfilePageState extends State<ProfilePage> {
             ListTile(
               leading: const Icon(Icons.work_history),
               title: const Text('Upload Pengalaman'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const UploadPengalamanPage()));
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UploadPengalamanPage()),
+                );
+                if (result != null) {
+                  setState(() {
+                    _pengalamanData = Map<String, String>.from(result);
+                  });
+                }
               },
             ),
           ],
@@ -55,15 +79,16 @@ class _ProfilePageState extends State<ProfilePage> {
             CircleAvatar(
               radius: 50,
               backgroundColor: Colors.blue,
-              backgroundImage: _currentImg != null ? NetworkImage(_currentImg!) : null,
-              child: _currentImg == null ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
+              backgroundImage: hasProfileImg ? FileImage(File(_profileData['img']!)) : null,
+              child: !hasProfileImg ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
             ),
             const SizedBox(height: 10),
-            const Text('Dea Wardini', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Text(_profileData['nama']!, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const Text('233040003'),
             const Divider(height: 30),
-            WidgetGallery(icon: Icons.school, judul: 'Pendidikan', deskripsi: 'Informatika - Universitas pasundan'),
-            WidgetGallery(icon: Icons.location_on, judul: 'Lokasi', deskripsi: 'Kota Bandung'),
+            WidgetGallery(icon: Icons.info, judul: 'Tentang', deskripsi: _profileData['tentang']!),
+            WidgetGallery(icon: Icons.school, judul: 'Pendidikan', deskripsi: _profileData['pendidikan']!),
+            WidgetGallery(icon: Icons.location_on, judul: 'Lokasi', deskripsi: _profileData['lokasi']!),
 
             const Padding(
               padding: EdgeInsets.all(16.0),
@@ -77,16 +102,23 @@ class _ProfilePageState extends State<ProfilePage> {
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
-                  Image.asset(
+                  hasPengalamanImg
+                      ? Image.file(
+                    File(_pengalamanData['img']!),
+                    width: double.infinity,
+                    height: 160,
+                    fit: BoxFit.cover,
+                  )
+                      : Image.asset(
                     'assets/pengalaman.png',
                     width: double.infinity,
                     height: 160,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Image.network('https://picsum.photos/400/200', fit: BoxFit.cover),
                   ),
-                  const ListTile(
-                    title: Text('Project Web Laravel - Acarra'),
-                    subtitle: Text('Mengelola backend dan database sistem manajemen event.'),
+                  ListTile(
+                    title: Text(_pengalamanData['judul']!),
+                    subtitle: Text(_pengalamanData['deskripsi']!),
                   ),
                 ],
               ),
@@ -100,11 +132,13 @@ class _ProfilePageState extends State<ProfilePage> {
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const QuizPertemuan3()),
+            MaterialPageRoute(
+              builder: (context) => QuizPertemuan3(currentData: _profileData),
+            ),
           );
           if (result != null) {
             setState(() {
-              _currentImg = result;
+              _profileData = Map<String, String>.from(result);
             });
           }
         },
